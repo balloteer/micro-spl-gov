@@ -53,6 +53,12 @@ pub fn handler(
         GovError::ElectionEnded
     );
 
+    // Check if election has been manually ended or cancelled
+    require!(
+        election.status != ElectionStatus::Ended,
+        GovError::ElectionEnded
+    );
+
     require!(
         election.status == ElectionStatus::Active ||
         (election.status == ElectionStatus::Pending && clock.unix_timestamp >= election.start_time),

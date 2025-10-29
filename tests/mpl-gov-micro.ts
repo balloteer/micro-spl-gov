@@ -113,6 +113,16 @@ describe("mpl-gov-micro", () => {
     });
 
     it("Fails with too many candidates", async () => {
+      // Use a different authority to avoid account collision
+      const testAuthority = Keypair.generate();
+      await provider.connection.requestAirdrop(
+        testAuthority.publicKey,
+        2 * anchor.web3.LAMPORTS_PER_SOL
+      );
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const [testElectionPda] = await deriveElectionPda(testAuthority.publicKey);
+
       const tooManyCandidates = Array(11)
         .fill(null)
         .map((_, i) => `Candidate${i}`);
@@ -123,18 +133,33 @@ describe("mpl-gov-micro", () => {
         await program.methods
           .createElection(tooManyCandidates, startTime, endTime)
           .accounts({
-            election: electionPda,
-            authority: authority.publicKey,
+            election: testElectionPda,
+            authority: testAuthority.publicKey,
             systemProgram: SystemProgram.programId,
           })
+          .signers([testAuthority])
           .rpc();
         expect.fail("Should have failed with too many candidates");
-      } catch (error) {
-        expect(error.toString()).to.include("TooManyCandidates");
+      } catch (error: any) {
+        expect(
+          error.error?.errorCode?.code ||
+          error.message ||
+          error.toString()
+        ).to.include("TooManyCandidates");
       }
     });
 
     it("Fails with invalid time range", async () => {
+      // Use a different authority to avoid account collision
+      const testAuthority = Keypair.generate();
+      await provider.connection.requestAirdrop(
+        testAuthority.publicKey,
+        2 * anchor.web3.LAMPORTS_PER_SOL
+      );
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const [testElectionPda] = await deriveElectionPda(testAuthority.publicKey);
+
       const candidates = ["Alice", "Bob"];
       const startTime = new anchor.BN(getCurrentTimestamp() + 86400);
       const endTime = new anchor.BN(getCurrentTimestamp()); // End before start
@@ -143,14 +168,19 @@ describe("mpl-gov-micro", () => {
         await program.methods
           .createElection(candidates, startTime, endTime)
           .accounts({
-            election: electionPda,
-            authority: authority.publicKey,
+            election: testElectionPda,
+            authority: testAuthority.publicKey,
             systemProgram: SystemProgram.programId,
           })
+          .signers([testAuthority])
           .rpc();
         expect.fail("Should have failed with invalid time range");
-      } catch (error) {
-        expect(error.toString()).to.include("InvalidTimeRange");
+      } catch (error: any) {
+        expect(
+          error.error?.errorCode?.code ||
+          error.message ||
+          error.toString()
+        ).to.include("InvalidTimeRange");
       }
     });
   });
@@ -337,8 +367,12 @@ describe("mpl-gov-micro", () => {
           .rpc();
 
         expect.fail("Should have failed with AlreadyVoted");
-      } catch (error) {
-        expect(error.toString()).to.include("AlreadyVoted");
+      } catch (error: any) {
+        expect(
+          error.error?.errorCode?.code ||
+          error.message ||
+          error.toString()
+        ).to.include("AlreadyVoted");
       }
     });
 
@@ -385,8 +419,12 @@ describe("mpl-gov-micro", () => {
           .rpc();
 
         expect.fail("Should have failed with InvalidChoice");
-      } catch (error) {
-        expect(error.toString()).to.include("InvalidChoice");
+      } catch (error: any) {
+        expect(
+          error.error?.errorCode?.code ||
+          error.message ||
+          error.toString()
+        ).to.include("InvalidChoice");
       }
     });
   });
@@ -450,8 +488,12 @@ describe("mpl-gov-micro", () => {
           .rpc();
 
         expect.fail("Should have failed - election is ended");
-      } catch (error) {
-        expect(error.toString()).to.include("ElectionEnded");
+      } catch (error: any) {
+        expect(
+          error.error?.errorCode?.code ||
+          error.message ||
+          error.toString()
+        ).to.include("ElectionEnded");
       }
     });
   });
