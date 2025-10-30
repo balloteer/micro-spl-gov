@@ -130,6 +130,12 @@ pub fn handler(
         msg!("Compression disabled - using regular accounts");
     }
 
+    // Beta features - initialize as disabled
+    election.privacy_enabled = false;
+    election.privacy_layer_program = Pubkey::default();
+    election.on_success_hook = None;
+    election.on_failure_hook = None;
+
     election.bump = ctx.bumps.election;
 
     msg!("Election created with {} candidates", candidates.len());

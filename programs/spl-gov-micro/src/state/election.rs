@@ -39,6 +39,20 @@ pub struct Election {
     /// Total number of registered voters
     pub total_registered: u64,
 
+    // ===== BETA FEATURES (Not for Hackathon Demo) =====
+
+    /// Whether private voting is enabled (via privacy layer)
+    pub privacy_enabled: bool,
+
+    /// Privacy layer program pubkey (if privacy enabled)
+    pub privacy_layer_program: Pubkey,
+
+    /// Hook to execute when election succeeds (passes threshold)
+    pub on_success_hook: Option<Pubkey>,
+
+    /// Hook to execute when election fails (doesn't pass threshold)
+    pub on_failure_hook: Option<Pubkey>,
+
     /// Bump seed for PDA
     pub bump: u8,
 }
@@ -57,9 +71,13 @@ impl Election {
     /// + 1 (use_compression)
     /// + 32 (merkle_tree)
     /// + 8 (total_registered)
+    /// + 1 (privacy_enabled)
+    /// + 32 (privacy_layer_program)
+    /// + 33 (on_success_hook: Option<Pubkey>)
+    /// + 33 (on_failure_hook: Option<Pubkey>)
     /// + 1 (bump)
-    /// = 8 + 32 + 544 + 84 + 8 + 32 + 8 + 8 + 1 + 1 + 32 + 8 + 1 = 767 bytes
-    pub const MAX_SIZE: usize = 767;
+    /// = 8 + 32 + 544 + 84 + 8 + 32 + 8 + 8 + 1 + 1 + 32 + 8 + 1 + 32 + 33 + 33 + 1 = 866 bytes
+    pub const MAX_SIZE: usize = 866;
 
     /// Maximum number of candidates allowed
     pub const MAX_CANDIDATES: usize = 10;

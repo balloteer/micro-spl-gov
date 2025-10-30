@@ -58,4 +58,27 @@ pub enum GovError {
     
     #[msg("Invalid batch vote operation")]
     InvalidBatchVote,
+
+    // Beta: Privacy layer errors
+    #[msg("Election has already started, cannot modify privacy settings")]
+    ElectionAlreadyStarted,
+
+    #[msg("Invalid privacy layer program")]
+    InvalidPrivacyProgram,
+
+    #[msg("Privacy voting is not enabled for this election")]
+    PrivacyNotEnabled,
+
+    #[msg("Unauthorized privacy layer caller")]
+    UnauthorizedPrivacyLayer,
+
+    #[msg("Invalid tally data")]
+    InvalidTally,
+
+    // Beta: Hooks errors
+    #[msg("Invalid hook program")]
+    InvalidHookProgram,
+
+    #[msg("Hook execution failed")]
+    HookExecutionFailed,
 }

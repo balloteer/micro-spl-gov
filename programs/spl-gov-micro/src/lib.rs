@@ -62,6 +62,52 @@ pub mod mpl_gov_micro {
     ) -> Result<()> {
         instructions::close_election::handler(ctx)
     }
+
+    // ===== BETA FEATURES (Not for Hackathon Demo) =====
+
+    /// Enable private voting for an election (privacy layer integration)
+    pub fn enable_private_voting(
+        ctx: Context<EnablePrivateVoting>,
+    ) -> Result<()> {
+        instructions::privacy_interface::enable_private_voting(ctx)
+    }
+
+    /// Receive finalized tally from privacy layer (CPI only)
+    pub fn receive_private_tally(
+        ctx: Context<ReceivePrivateTally>,
+        tally: Vec<u64>,
+        proof: Vec<u8>,
+    ) -> Result<()> {
+        instructions::privacy_interface::receive_private_tally(ctx, tally, proof)
+    }
+
+    /// Disable private voting (before election starts)
+    pub fn disable_private_voting(
+        ctx: Context<DisablePrivateVoting>,
+    ) -> Result<()> {
+        instructions::privacy_interface::disable_private_voting(ctx)
+    }
+
+    /// Set a hook to execute when election succeeds
+    pub fn set_success_hook(
+        ctx: Context<SetSuccessHook>,
+    ) -> Result<()> {
+        instructions::hooks::set_success_hook(ctx)
+    }
+
+    /// Set a hook to execute when election fails
+    pub fn set_failure_hook(
+        ctx: Context<SetFailureHook>,
+    ) -> Result<()> {
+        instructions::hooks::set_failure_hook(ctx)
+    }
+
+    /// Clear all hooks
+    pub fn clear_hooks(
+        ctx: Context<ClearHooks>,
+    ) -> Result<()> {
+        instructions::hooks::clear_hooks(ctx)
+    }
 }
 
 /// Input for a single vote in batch voting
