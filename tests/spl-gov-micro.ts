@@ -203,8 +203,10 @@ describe("mpl-gov-micro", () => {
         .accounts({
           election: electionPda,
           voterRegistration: voterRegPda,
+          merkleTree: null,
           voter: voter1.publicKey,
           attestation: attestation.publicKey,
+          compressionProgram: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([voter1])
@@ -233,8 +235,10 @@ describe("mpl-gov-micro", () => {
         .accounts({
           election: electionPda,
           voterRegistration: voterReg2Pda,
+          merkleTree: null,
           voter: voter2.publicKey,
           attestation: attestation.publicKey,
+          compressionProgram: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([voter2])
@@ -250,8 +254,10 @@ describe("mpl-gov-micro", () => {
         .accounts({
           election: electionPda,
           voterRegistration: voterReg3Pda,
+          merkleTree: null,
           voter: voter3.publicKey,
           attestation: attestation.publicKey,
+          compressionProgram: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([voter3])
@@ -286,12 +292,13 @@ describe("mpl-gov-micro", () => {
       const merkleProof = []; // Empty for MVP
 
       await program.methods
-        .castVote(choice, merkleProof)
+        .castVote(choice, merkleProof, null, null) // leaf_index and registered_at are null for legacy mode
         .accounts({
           election: electionPda,
           voterRegistration: voterRegPda,
           nullifierSet: nullifierSetPda,
           voter: voter1.publicKey,
+          attestation: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([voter1])
@@ -313,12 +320,13 @@ describe("mpl-gov-micro", () => {
 
       // Voter 2 votes for Bob (choice 1)
       await program.methods
-        .castVote(1, [])
+        .castVote(1, [], null, null)
         .accounts({
           election: electionPda,
           voterRegistration: voterReg2Pda,
           nullifierSet: nullifierSetPda,
           voter: voter2.publicKey,
+          attestation: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([voter2])
@@ -331,12 +339,13 @@ describe("mpl-gov-micro", () => {
 
       // Voter 3 votes for Charlie (choice 2)
       await program.methods
-        .castVote(2, [])
+        .castVote(2, [], null, null)
         .accounts({
           election: electionPda,
           voterRegistration: voterReg3Pda,
           nullifierSet: nullifierSetPda,
           voter: voter3.publicKey,
+          attestation: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([voter3])
@@ -361,12 +370,13 @@ describe("mpl-gov-micro", () => {
       try {
         // Try to vote again
         await program.methods
-          .castVote(1, [])
+          .castVote(1, [], null, null)
           .accounts({
             election: electionPda,
             voterRegistration: voterRegPda,
             nullifierSet: nullifierSetPda,
             voter: voter1.publicKey,
+            attestation: null,
             systemProgram: SystemProgram.programId,
           })
           .signers([voter1])
@@ -401,8 +411,10 @@ describe("mpl-gov-micro", () => {
         .accounts({
           election: electionPda,
           voterRegistration: voterReg4Pda,
+          merkleTree: null,
           voter: voter4.publicKey,
           attestation: attestation.publicKey,
+          compressionProgram: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([voter4])
@@ -413,12 +425,13 @@ describe("mpl-gov-micro", () => {
       try {
         // Try to vote for invalid candidate (index 3, but only 0-2 exist)
         await program.methods
-          .castVote(3, [])
+          .castVote(3, [], null, null)
           .accounts({
             election: electionPda,
             voterRegistration: voterReg4Pda,
             nullifierSet: nullifierSetPda,
             voter: voter4.publicKey,
+            attestation: null,
             systemProgram: SystemProgram.programId,
           })
           .signers([voter4])
@@ -471,8 +484,10 @@ describe("mpl-gov-micro", () => {
         .accounts({
           election: electionPda,
           voterRegistration: voterReg5Pda,
+          merkleTree: null,
           voter: voter5.publicKey,
           attestation: attestation.publicKey,
+          compressionProgram: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([voter5])
@@ -482,12 +497,13 @@ describe("mpl-gov-micro", () => {
 
       try {
         await program.methods
-          .castVote(0, [])
+          .castVote(0, [], null, null)
           .accounts({
             election: electionPda,
             voterRegistration: voterReg5Pda,
             nullifierSet: nullifierSetPda,
             voter: voter5.publicKey,
+            attestation: null,
             systemProgram: SystemProgram.programId,
           })
           .signers([voter5])
@@ -554,8 +570,10 @@ describe("mpl-gov-micro", () => {
           .accounts({
             election: election2Pda,
             voterRegistration: voterRegPda,
+            merkleTree: null,
             voter: voter.publicKey,
             attestation: attestation.publicKey,
+            compressionProgram: null,
             systemProgram: SystemProgram.programId,
           })
           .signers([voter])
@@ -574,12 +592,13 @@ describe("mpl-gov-micro", () => {
         const choice = i < 2 ? 0 : 1; // First 2 vote for Option A, last votes for Option B
 
         await program.methods
-          .castVote(choice, [])
+          .castVote(choice, [], null, null)
           .accounts({
             election: election2Pda,
             voterRegistration: voterRegPda,
             nullifierSet: nullifierSet2Pda,
             voter: voters[i].publicKey,
+            attestation: null,
             systemProgram: SystemProgram.programId,
           })
           .signers([voters[i]])

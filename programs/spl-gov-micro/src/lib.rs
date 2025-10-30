@@ -42,8 +42,10 @@ pub mod mpl_gov_micro {
         ctx: Context<CastVote>,
         choice: u8,
         merkle_proof: Vec<[u8; 32]>,
+        leaf_index: Option<u32>,
+        registered_at: Option<i64>,
     ) -> Result<()> {
-        instructions::cast_vote::handler(ctx, choice, merkle_proof)
+        instructions::cast_vote::handler(ctx, choice, merkle_proof, leaf_index, registered_at)
     }
 
     /// Cast multiple votes in a batch

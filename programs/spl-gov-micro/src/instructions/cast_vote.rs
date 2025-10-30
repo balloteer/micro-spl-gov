@@ -1,12 +1,15 @@
 use anchor_lang::prelude::*;
 use crate::state::*;
 use crate::errors::*;
+use crate::utils::compression::{CompressedVoterData, verify_compressed_voter_proof};
 
 #[derive(Accounts)]
 pub struct CastVote<'info> {
     #[account(mut)]
     pub election: Account<'info, Election>,
 
+    /// Voter registration account (only required for legacy mode)
+    /// In compression mode, voter eligibility is verified via merkle proof
     #[account(
         seeds = [
             b"voter_registration",
@@ -15,7 +18,7 @@ pub struct CastVote<'info> {
         ],
         bump
     )]
-    pub voter_registration: Account<'info, VoterRegistration>,
+    pub voter_registration: Option<Account<'info, VoterRegistration>>,
 
     #[account(
         init_if_needed,
@@ -29,17 +32,21 @@ pub struct CastVote<'info> {
     #[account(mut)]
     pub voter: Signer<'info>,
 
+    /// CHECK: Attestation account (optional, only for compression mode proof verification)
+    pub attestation: Option<UncheckedAccount<'info>>,
+
     pub system_program: Program<'info, System>,
 }
 
 pub fn handler(
     ctx: Context<CastVote>,
     choice: u8,
-    _merkle_proof: Vec<[u8; 32]>,
+    merkle_proof: Vec<[u8; 32]>,
+    leaf_index: Option<u32>,
+    registered_at: Option<i64>,
 ) -> Result<()> {
     let election = &mut ctx.accounts.election;
     let nullifier_set = &mut ctx.accounts.nullifier_set;
-    let voter_registration = &ctx.accounts.voter_registration;
     let clock = Clock::get()?;
 
     // Verify election is active
@@ -71,16 +78,74 @@ pub fn handler(
         GovError::InvalidChoice
     );
 
-    // Create nullifier for this vote
+    let voter_key = ctx.accounts.voter.key();
+    let election_key = election.key();
+
+    // Verify voter eligibility based on compression mode
+    if election.use_compression {
+        // ===== COMPRESSION MODE: Verify via merkle proof =====
+        msg!("Verifying voter via merkle proof (compression mode)");
+
+        // Validate required parameters for compression mode
+        require!(
+            leaf_index.is_some() && registered_at.is_some() && ctx.accounts.attestation.is_some(),
+            GovError::InvalidMerkleProof
+        );
+
+        let attestation_key = ctx.accounts.attestation.as_ref().unwrap().key();
+
+        // Reconstruct the voter data to generate leaf hash
+        let compressed_data = CompressedVoterData::new(
+            voter_key,
+            election_key,
+            attestation_key,
+            registered_at.unwrap(),
+        );
+
+        let leaf_hash = compressed_data.to_leaf_hash()?;
+
+        // Verify the merkle proof
+        let is_valid = verify_compressed_voter_proof(
+            &election.voter_merkle_root,
+            &leaf_hash,
+            &merkle_proof,
+            leaf_index.unwrap(),
+        )?;
+
+        require!(is_valid, GovError::InvalidMerkleProof);
+
+        msg!("Merkle proof verified for voter: {}", voter_key);
+
+    } else {
+        // ===== LEGACY MODE: Verify via voter registration account =====
+        msg!("Verifying voter via registration account (legacy mode)");
+
+        require!(
+            ctx.accounts.voter_registration.is_some(),
+            GovError::NotRegistered
+        );
+
+        let voter_registration = ctx.accounts.voter_registration.as_ref().unwrap();
+
+        // Verify voter registration matches
+        require!(
+            voter_registration.wallet == voter_key,
+            GovError::NotRegistered
+        );
+
+        msg!("Voter registration verified: {}", voter_key);
+    }
+
+    // Create nullifier for this vote (same for both modes)
     let nullifier = VoteNullifier::new(
-        &voter_registration.wallet,
-        &election.key(),
+        &voter_key,
+        &election_key,
         0 // nonce - for MVP we use 0, in production this could be dynamic
     );
 
     // Initialize nullifier set if needed
     if nullifier_set.election == Pubkey::default() {
-        nullifier_set.election = election.key();
+        nullifier_set.election = election_key;
         nullifier_set.used_nullifiers = Vec::new();
         nullifier_set.bump = ctx.bumps.nullifier_set;
     }
@@ -108,8 +173,9 @@ pub fn handler(
     // Mark nullifier as used
     nullifier_set.used_nullifiers.push(nullifier.nullifier_hash);
 
-    msg!("Vote cast for candidate {} by voter {}", choice, voter_registration.wallet);
+    msg!("Vote cast for candidate {} by voter {}", choice, voter_key);
     msg!("Total votes: {}", election.total_votes);
+    msg!("Compression mode: {}", election.use_compression);
 
     Ok(())
 }

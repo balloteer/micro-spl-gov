@@ -86,36 +86,44 @@ pub fn handler(
 
     // Handle compression setup
     if use_compression {
-        // Validate that merkle tree and compression program are provided
-        require!(
-            ctx.accounts.merkle_tree.is_some() && ctx.accounts.compression_program.is_some(),
-            GovError::InvalidAttestation // Using existing error, could add a new one
-        );
+        // In production, merkle tree and compression program should be provided
+        // For MVP, we allow optional merkle tree setup
+        if ctx.accounts.merkle_tree.is_some() && ctx.accounts.compression_program.is_some() {
+            let merkle_tree = ctx.accounts.merkle_tree.as_ref().unwrap();
+            let compression_program = ctx.accounts.compression_program.as_ref().unwrap();
 
-        let merkle_tree = ctx.accounts.merkle_tree.as_ref().unwrap();
-        let compression_program = ctx.accounts.compression_program.as_ref().unwrap();
+            // Store merkle tree account
+            election.merkle_tree = merkle_tree.key();
 
-        // Store merkle tree account
-        election.merkle_tree = merkle_tree.key();
-
-        // Initialize merkle tree with appropriate size
-        let (depth, buffer_size) = get_merkle_tree_size(max_voters);
-
-        #[cfg(feature = "compression")]
-        {
-            use crate::utils::compression::initialize_voter_merkle_tree;
-            initialize_voter_merkle_tree(
-                merkle_tree,
-                &ctx.accounts.authority.to_account_info(),
-                &ctx.accounts.authority.to_account_info(), // payer
-                compression_program,
-                &ctx.accounts.system_program.to_account_info(),
-                depth,
-                buffer_size,
-            )?;
+            msg!("Compression enabled with merkle tree: {}", merkle_tree.key());
+        } else {
+            // MVP mode: compression enabled but merkle tree setup deferred to client
+            msg!("Compression enabled (MVP mode - merkle tree setup deferred to client)");
+            election.merkle_tree = Pubkey::default();
         }
 
-        msg!("Compression enabled - initialized merkle tree with depth {}", depth);
+        // Initialize merkle tree with appropriate size (only if accounts provided)
+        if ctx.accounts.merkle_tree.is_some() && ctx.accounts.compression_program.is_some() {
+            let merkle_tree = ctx.accounts.merkle_tree.as_ref().unwrap();
+            let compression_program = ctx.accounts.compression_program.as_ref().unwrap();
+            let (depth, buffer_size) = get_merkle_tree_size(max_voters);
+
+            #[cfg(feature = "compression")]
+            {
+                use crate::utils::compression::initialize_voter_merkle_tree;
+                initialize_voter_merkle_tree(
+                    merkle_tree,
+                    &ctx.accounts.authority.to_account_info(),
+                    &ctx.accounts.authority.to_account_info(), // payer
+                    compression_program,
+                    &ctx.accounts.system_program.to_account_info(),
+                    depth,
+                    buffer_size,
+                )?;
+            }
+
+            msg!("Compression enabled - initialized merkle tree with depth {}", depth);
+        }
     } else {
         // No compression - set merkle_tree to default
         election.merkle_tree = Pubkey::default();
