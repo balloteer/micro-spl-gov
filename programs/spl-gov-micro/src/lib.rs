@@ -12,7 +12,7 @@ pub use state::*;
 pub use instructions::*;
 
 // Program ID - This will be updated after deployment
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("G3oRp71dn6S5TRmhXWXaURzGTtk485zSdZ6Xy46JkRDR");
 
 #[program]
 pub mod mpl_gov_micro {
@@ -24,8 +24,10 @@ pub mod mpl_gov_micro {
         candidates: Vec<String>,
         start_time: i64,
         end_time: i64,
+        use_compression: bool,
+        max_voters: u32,
     ) -> Result<()> {
-        instructions::create_election::handler(ctx, candidates, start_time, end_time)
+        instructions::create_election::handler(ctx, candidates, start_time, end_time, use_compression, max_voters)
     }
 
     /// Register a voter for an election (with compression)

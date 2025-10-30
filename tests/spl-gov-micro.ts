@@ -89,10 +89,12 @@ describe("mpl-gov-micro", () => {
       const endTime = new anchor.BN(getCurrentTimestamp() + 86400); // +24 hours
 
       await program.methods
-        .createElection(candidates, startTime, endTime)
+        .createElection(candidates, startTime, endTime, false, 1000) // use_compression=false, max_voters=1000
         .accounts({
           election: electionPda,
           authority: authority.publicKey,
+          merkleTree: null,
+          compressionProgram: null,
           systemProgram: SystemProgram.programId,
         })
         .rpc();
@@ -131,10 +133,12 @@ describe("mpl-gov-micro", () => {
 
       try {
         await program.methods
-          .createElection(tooManyCandidates, startTime, endTime)
+          .createElection(tooManyCandidates, startTime, endTime, false, 1000)
           .accounts({
             election: testElectionPda,
             authority: testAuthority.publicKey,
+            merkleTree: null,
+            compressionProgram: null,
             systemProgram: SystemProgram.programId,
           })
           .signers([testAuthority])
@@ -166,10 +170,12 @@ describe("mpl-gov-micro", () => {
 
       try {
         await program.methods
-          .createElection(candidates, startTime, endTime)
+          .createElection(candidates, startTime, endTime, false, 1000)
           .accounts({
             election: testElectionPda,
             authority: testAuthority.publicKey,
+            merkleTree: null,
+            compressionProgram: null,
             systemProgram: SystemProgram.programId,
           })
           .signers([testAuthority])
@@ -515,10 +521,12 @@ describe("mpl-gov-micro", () => {
       const endTime = new anchor.BN(getCurrentTimestamp() + 3600);
 
       await program.methods
-        .createElection(candidates, startTime, endTime)
+        .createElection(candidates, startTime, endTime, false, 1000)
         .accounts({
           election: election2Pda,
           authority: authority2.publicKey,
+          merkleTree: null,
+          compressionProgram: null,
           systemProgram: SystemProgram.programId,
         })
         .signers([authority2])
